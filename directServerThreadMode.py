@@ -5,10 +5,27 @@ from socketserver import ThreadingMixIn
 import threading
 
 import hashlib
+from urllib.parse import urljoin, urlparse
+from helpers import configHelper
 
-hostname = '163.172.255.98' #Gatari IP
-username = 'Unknown' #Gatari Username
-password = 'apekiller39' #Gatari Password
+conf = configHelper.config("config.ini")
+if conf.default:
+	# We have generated a default config.ini, quit server
+	print("[!] config.ini not found. A default one has been generated.")
+	print("[!] Please edit your config.ini and run the server again.")
+	sys.exit()
+
+if not conf.checkConfig():
+	print("[!] Invalid config.ini. Please configure it properly!")
+	print("[!] Delete your config.ini to generate a default one.")
+	sys.exit()
+else:
+	print("[/] Done!")
+
+hostname = conf.config["server"]["host"] # Server IP
+username = conf.config["server"]["username"] # Username
+password = conf.config["server"]["password"] # Plain Password
+certificate = conf.config["server"]["certificate"] # Cert Path
 password_hashed = hashlib.md5(str(password).encode('utf-8')).hexdigest()
 
 def merge_two_dicts(x, y):
@@ -35,12 +52,17 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 		sent = False
 		try:
 
-			url = 'https://{}{}?u={}&h={}&vv=2'.format(hostname, self.path, username, password_hashed)
+			initialising_url = 'https://{}{}'.format(hostname, self.path)
+			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
+			url = final_url + '?u={}&h={}&vv=2'.format(username, password_hashed)
 			req_header = self.parse_headers()
 
 			print(req_header)
 			print(url)
-			resp = requests.get(url, headers=merge_two_dicts(req_header, set_header()), verify=False)
+			if certificate == "":
+				resp = requests.get(url, headers=merge_two_dicts(req_header, set_header()), verify=False)
+			else:
+				resp = requests.get(url, headers=merge_two_dicts(req_header, set_header()), verify=certificate)
 			sent = True
 
 			self.send_response(resp.status_code)
@@ -56,12 +78,17 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_POST(self, body=True):
 		sent = False
 		try:
-			url = 'https://{}{}?u={}&h={}&vv=2'.format(hostname, self.path, username, password_hashed)
+			initialising_url = 'https://{}{}'.format(hostname, self.path)
+			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
+			url = final_url + '?u={}&h={}&vv=2'.format(username, password_hashed)
 			content_len = int(self.headers.getheader('content-length', 0))
 			post_body = self.rfile.read(content_len)
 			req_header = self.parse_headers()
 
-			resp = requests.post(url, data=post_body, headers=merge_two_dicts(req_header, set_header()), verify=False)
+			if certificate == "":
+				resp = requests.post(url, data=post_body, headers=merge_two_dicts(req_header, set_header()), verify=False)
+			else:
+				resp = requests.post(url, data=post_body, headers=merge_two_dicts(req_header, set_header()), verify=certificate)
 			sent = True
 
 			self.send_response(resp.status_code)
