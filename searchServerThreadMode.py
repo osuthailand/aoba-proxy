@@ -28,6 +28,11 @@ password = conf.config["server"]["password"] # Plain Password
 certificate = conf.config["server"]["certificate"] # Cert Path
 password_hashed = hashlib.md5(str(password).encode('utf-8')).hexdigest()
 
+secret = ""
+secret += "69"
+secret += "\n"
+secret += "1160660.osz|Oh! seems like you found a secret!|SANTA SANS|Aoba loves you! <3|1|10|2020-04-01T00:00:00+00:00|1160660|1061805|||0||https://ainu.pw play now please@0\n"
+
 def merge_two_dicts(x, y):
 	z = x.copy()
 	z.update(y)
@@ -68,10 +73,17 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 			sent = True
 
 			self.send_response(resp.status_code)
-			self.send_resp_headers(resp)
+			if get_query["q"][0] != "osu!ainu":
+				self.send_resp_headers(resp)
+			else:
+				self.send_resp_headers_hidden(resp)
+			
 			beatmap = resp.content
 			if body:
-				self.wfile.write(beatmap)
+				if get_query["q"][0] == "osu!ainu":
+					self.wfile.write(secret.encode())
+				else:
+					self.wfile.write(beatmap)
 			return
 		finally:
 			if not sent:
@@ -121,6 +133,16 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 				print (key, respheaders[key])
 				self.send_header(key, respheaders[key])
 		self.send_header('Content-Length', len(resp.content))
+		self.end_headers()
+
+	def send_resp_headers_hidden(self, resp):
+		respheaders = resp.headers
+		print ('Response Header')
+		for key in respheaders:
+			if key not in ['Content-Encoding', 'Transfer-Encoding', 'content-encoding', 'transfer-encoding', 'content-length', 'Content-Length']:
+				print (key, respheaders[key])
+				self.send_header(key, respheaders[key])
+		self.send_header('Content-Length', len(secret))
 		self.end_headers()
 
 def parse_args(argv=sys.argv[1:]):
