@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler,HTTPServer
 import argparse, os, random, sys, requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from socketserver import ThreadingMixIn
 import threading
@@ -8,25 +9,29 @@ import hashlib
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse, parse_qs
 from helpers import configHelper
 
+from constants import bcolors
+from helpers import consoleHelper
+
 conf = configHelper.config("config.ini")
 if conf.default:
 	# We have generated a default config.ini, quit server
-	print("[!] config.ini not found. A default one has been generated.")
-	print("[!] Please edit your config.ini and run the server again.")
+	consoleHelper.printWarning()
+	consoleHelper.printColored("[!] config.ini not found. A default one has been generated.", bcolors.YELLOW)
+	consoleHelper.printColored("[!] Please edit your config.ini and run the server again.", bcolors.YELLOW)
 	sys.exit()
 
 if not conf.checkConfig():
-	print("[!] Invalid config.ini. Please configure it properly!")
-	print("[!] Delete your config.ini to generate a default one.")
+	consoleHelper.printError()
+	consoleHelper.printColored("[!] Invalid config.ini. Please configure it properly", bcolors.RED)
+	consoleHelper.printColored("[!] Delete your config.ini to generate a default one", bcolors.RED)
 	sys.exit()
-else:
-	print("[/] Done!")
 
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning) # I have got enough bullshit
 hostname = conf.config["server"]["host"] # Server IP
 username = conf.config["server"]["username"] # Username
 password = conf.config["server"]["password"] # Plain Password
 certificate = conf.config["server"]["certificate"] # Cert Path
-password_hashed = hashlib.md5(str(password).encode('utf-8')).hexdigest()
+password_hashed = hashlib.md5(str(password).encode('utf-8')).hexdigest() # Hashed Password
 
 def merge_two_dicts(x, y):
 	z = x.copy()
@@ -59,8 +64,9 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
 			url = final_url + "?" + urlencode(query_hack, doseq=True)
 			req_header = self.parse_headers()
-			print(req_header)
-			print(url)
+			if conf.config["console"]["verbose"] == True:
+				print(req_header)
+				print(url)
 			if certificate == "":
 				resp = requests.get(url, headers=merge_two_dicts(req_header, set_header()), verify=False)
 			else:
@@ -69,9 +75,9 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 
 			self.send_response(resp.status_code)
 			self.send_resp_headers(resp)
-			beatmap = resp.content
+			data = resp.content
 			if body:
-				self.wfile.write(beatmap)
+				self.wfile.write(data)
 			return
 		finally:
 			if not sent:
@@ -116,10 +122,12 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 
 	def send_resp_headers(self, resp):
 		respheaders = resp.headers
-		print ('Response Header')
+		if conf.config["console"]["verbose"] == True:
+			print ('Response Header')
 		for key in respheaders:
 			if key not in ['Content-Encoding', 'Transfer-Encoding', 'content-encoding', 'transfer-encoding', 'content-length', 'Content-Length']:
-				print (key, respheaders[key])
+				if conf.config["console"]["verbose"] == True:
+					print (key, respheaders[key])
 				self.send_header(key, respheaders[key])
 		self.send_header('Content-Length', len(resp.content))
 		self.end_headers()
@@ -140,7 +148,8 @@ def main(argv=sys.argv[1:]):
 		global hostname
 		args = parse_args(argv)
 		hostname = args.hostname
-		print("Welcome to Aoba's Tool server!\nProxying {} and hosting on port {}...".format(args.hostname, args.port))
+		consoleHelper.printServerStartHeader(True)
+		consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, args.hostname, args.port), bcolors.GREEN)
 		server_address = ('127.0.0.1', args.port)
 		#httpd = ThreadedHTTPServer(server_address, ProxyHTTPRequestHandler)
 		httpd = HTTPServer(server_address, ProxyHTTPRequestHandler)
