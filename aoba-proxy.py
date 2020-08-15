@@ -5,7 +5,7 @@ from socketserver import ThreadingMixIn
 import threading
 
 import hashlib
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlencode, urljoin, urlparse, urlunparse, parse_qs
 from helpers import configHelper
 
 conf = configHelper.config("config.ini")
@@ -51,12 +51,14 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_GET(self, body=True):
 		sent = False
 		try:
-
 			initialising_url = 'https://{}{}'.format(hostname, self.path)
+			parsed_url = urlparse(initialising_url)
+			query_hack = parse_qs(parsed_url.query)
+			query_hack["u"] = [username]
+			query_hack["h"] = [password_hashed]
 			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
-			url = final_url + '?u={}&h={}&vv=2'.format(username, password_hashed)
+			url = final_url + "?" + urlencode(query_hack, doseq=True)
 			req_header = self.parse_headers()
-
 			print(req_header)
 			print(url)
 			if certificate == "":
@@ -79,8 +81,12 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 		sent = False
 		try:
 			initialising_url = 'https://{}{}'.format(hostname, self.path)
+			parsed_url = urlparse(initialising_url)
+			query_hack = parse_qs(parsed_url.query)
+			query_hack["u"] = [username]
+			query_hack["h"] = [password_hashed]
 			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
-			url = final_url + '?u={}&h={}&vv=2'.format(username, password_hashed)
+			url = final_url + "?" + urlencode(query_hack, doseq=True)
 			content_len = int(self.headers.getheader('content-length', 0))
 			post_body = self.rfile.read(content_len)
 			req_header = self.parse_headers()
@@ -134,11 +140,10 @@ def main(argv=sys.argv[1:]):
 		global hostname
 		args = parse_args(argv)
 		hostname = args.hostname
-		print('aoba-mirror-server {} port {}...'.format(args.hostname, args.port))
+		print("Welcome to Aoba's Tool server!\nProxying {} and hosting on port {}...".format(args.hostname, args.port))
 		server_address = ('127.0.0.1', args.port)
-		httpd = ThreadedHTTPServer(server_address, ProxyHTTPRequestHandler)
-		#httpd = HTTPServer(server_address, ProxyHTTPRequestHandler)
-		print('running on gatari proxy owo')
+		#httpd = ThreadedHTTPServer(server_address, ProxyHTTPRequestHandler)
+		httpd = HTTPServer(server_address, ProxyHTTPRequestHandler)
 		httpd.timeout = 30
 		httpd.serve_forever()
 
