@@ -12,12 +12,10 @@ from objects import glob
 
 from http.server import BaseHTTPRequestHandler,HTTPServer
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse, parse_qs
-"""
-UNIX = True if os.name == "posix" else False
-if not UNIX:
-	from helpers import windowsCtrlCHelper
-"""
+
 glob.conf = configHelper.config("config.ini")
+glob.verbose = generalHelper.stringToBool(glob.conf.config["console"]["verbose"])
+
 if glob.conf.default:
 	# We have generated a default config.ini, quit server
 	consoleHelper.printWarning()
@@ -46,16 +44,12 @@ def main(argv=sys.argv[1:]):
 	hostname = glob.hostname
 	consoleHelper.printServerStartHeader(True)
 	consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, glob.hostname, args.port), bcolors.GREEN)
-	glob.verbose = generalHelper.stringToBool(glob.conf.config["console"]["verbose"])
 	if glob.verbose:
 		consoleHelper.printColored("WARNING! VERBOSE MODE IS ON!", bcolors.YELLOW)
 	server_address = ('127.0.0.1', args.port)
 	httpd = HTTPServer(server_address, proxyHTTPRequestHandler.ProxyHTTPRequestHandler)
 	httpd.timeout = 30
 	httpd.serve_forever()
-	"""
-	if not UNIX:
-		install_handler() # Ctrl + C for Windows
-	"""
+
 if __name__ == '__main__':
 	main()
