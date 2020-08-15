@@ -1,4 +1,5 @@
-import argparse, os, random, sys
+import argparse
+import sys
 
 from constants import bcolors
 
@@ -10,8 +11,7 @@ from helpers import generalHelper
 
 from objects import glob
 
-from http.server import BaseHTTPRequestHandler,HTTPServer
-from urllib.parse import urlencode, urljoin, urlparse, urlunparse, parse_qs
+from http.server import HTTPServer
 
 glob.conf = configHelper.config("config.ini")
 glob.verbose = generalHelper.stringToBool(glob.conf.config["console"]["verbose"])
