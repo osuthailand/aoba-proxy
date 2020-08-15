@@ -12,6 +12,10 @@ from helpers import configHelper
 from constants import bcolors
 from helpers import consoleHelper
 
+UNIX = True if os.name == "posix" else False
+if not UNIX:
+	from helpers import windowsCtrlCHelper
+
 conf = configHelper.config("config.ini")
 if conf.default:
 	# We have generated a default config.ini, quit server
@@ -151,10 +155,13 @@ def main(argv=sys.argv[1:]):
 		consoleHelper.printServerStartHeader(True)
 		consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, args.hostname, args.port), bcolors.GREEN)
 		server_address = ('127.0.0.1', args.port)
-		#httpd = ThreadedHTTPServer(server_address, ProxyHTTPRequestHandler)
-		httpd = HTTPServer(server_address, ProxyHTTPRequestHandler)
+		httpd = ThreadedHTTPServer(server_address, ProxyHTTPRequestHandler)
+		#httpd = HTTPServer(server_address, ProxyHTTPRequestHandler)
 		httpd.timeout = 30
 		httpd.serve_forever()
+
+		if not UNIX:
+			install_handler() # Ctrl + C for Windows
 
 if __name__ == '__main__':
 	main()
