@@ -64,6 +64,7 @@ class config:
 		self.config.set("server", "username", "Unknown")
 		self.config.set("server", "password", "apekiller39")
 		self.config.set("server", "certificate", "./certificate/gatri.crt")
+		self.config.add_section("console")
 		self.config.set("console", "verbose", "False")
 
 		# Write ini to file and close
