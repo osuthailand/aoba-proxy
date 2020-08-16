@@ -32,9 +32,7 @@ if not glob.conf.checkConfig():
 def parse_args(argv=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description='Aoba Proxy Server')
 	parser.add_argument('--port', dest='port', type=int, default=32767,
-						help='serve HTTP requests on specified port (default: random)')
-	parser.add_argument('--hostname', dest='hostname', type=str, default='163.172.255.98',
-						help='hostname to be processd (default: 163.172.255.98)')
+						help='serve HTTP requests on specified port (default: 32767)')
 	args = parser.parse_args(argv)
 	return args
 
