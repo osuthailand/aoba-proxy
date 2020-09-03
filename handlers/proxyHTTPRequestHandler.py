@@ -1,6 +1,9 @@
 import requests
+import hashlib
 
+from helpers import configHelper
 from helpers import generalHelper
+from helpers import consoleHelper
 
 from objects import glob
 
@@ -9,6 +12,12 @@ from urllib.parse import urlencode, urljoin, urlparse, urlunparse, parse_qs
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning) # I have got enough bullshit
+
+hostname = configHelper.config("config.ini").config["server"]["host"]
+username = configHelper.config("config.ini").config["server"]["username"]
+password = configHelper.config("config.ini").config["server"]["password"]
+certificate = configHelper.config("config.ini").config["server"]["certificate"]
+password_hashed = hashlib.md5(str(password).encode('utf-8')).hexdigest() # Hashed Password
 
 class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 	protocol_version = 'HTTP/1.0'
@@ -19,12 +28,12 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_GET(self, body=True):
 		sent = False
 		try:
-			initialising_url = 'https://{}{}'.format(glob.hostname, self.path)
+			initialising_url = 'https://{}{}'.format(hostname, self.path)
 			parsed_url = urlparse(initialising_url)
 			if parse_qs(parsed_url.query) != []:
 				query_hack = parse_qs(parsed_url.query)
-				query_hack["u"] = [glob.username]
-				query_hack["h"] = [glob.password_hashed]
+				query_hack["u"] = [username]
+				query_hack["h"] = [password_hashed]
 			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
 			if parse_qs(parsed_url.query) != []:
 				url = final_url + "?" + urlencode(query_hack, doseq=True)
@@ -34,7 +43,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 			if glob.verbose:
 				print(req_header)
 				print(url)
-			if glob.certificate == "":
+			if certificate == "":
 				resp = requests.get(url, headers=generalHelper.merge_two_dicts(req_header, generalHelper.set_header()), verify=False)
 			else:
 				resp = requests.get(url, headers=generalHelper.merge_two_dicts(req_header, generalHelper.set_header()), verify=certificate)
@@ -53,18 +62,18 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_POST(self, body=True):
 		sent = False
 		try:
-			initialising_url = 'https://{}{}'.format(glob.hostname, self.path)
+			initialising_url = 'https://{}{}'.format(hostname, self.path)
 			parsed_url = urlparse(initialising_url)
 			query_hack = parse_qs(parsed_url.query)
-			query_hack["u"] = [glob.username]
-			query_hack["h"] = [glob.password_hashed]
+			query_hack["u"] = [username]
+			query_hack["h"] = [password_hashed]
 			final_url = urljoin(initialising_url, urlparse(initialising_url).path)
 			url = final_url + "?" + urlencode(query_hack, doseq=True)
 			content_len = int(self.headers.getheader('content-length', 0))
 			post_body = self.rfile.read(content_len)
 			req_header = self.parse_headers()
 
-			if glob.certificate == "":
+			if certificate == "":
 				resp = requests.post(url, data=post_body, headers=merge_two_dicts(req_header, generalHelper.set_header()), verify=False)
 			else:
 				resp = requests.post(url, data=post_body, headers=merge_two_dicts(req_header, generalHelper.set_header()), verify=certificate)

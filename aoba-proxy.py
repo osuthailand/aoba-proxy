@@ -37,11 +37,10 @@ def parse_args(argv=sys.argv[1:]):
 	return args
 
 def main(argv=sys.argv[1:]):
-	global hostname
 	args = parse_args(argv)
-	hostname = glob.hostname
+	hostname = configHelper.config("config.ini").config["server"]["host"]
 	consoleHelper.printServerStartHeader(True)
-	consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, glob.hostname, args.port), bcolors.GREEN)
+	consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, hostname, args.port), bcolors.GREEN)
 	if glob.verbose:
 		consoleHelper.printColored("WARNING! VERBOSE MODE IS ON!", bcolors.YELLOW)
 	server_address = ('127.0.0.1', args.port)
