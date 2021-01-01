@@ -41,7 +41,7 @@ def main(argv=sys.argv[1:]):
 		consoleHelper.printColored("[!] Delete your config.ini to generate a default one", bcolors.RED)
 		sys.exit()
 
-	consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, glob.hostname, args.port), bcolors.GREEN)
+	consoleHelper.printColored("{}Proxying {} and hosting on 127.0.0.1:{}...".format(bcolors.UNDERLINE, hostname, args.port), bcolors.GREEN)
 	if glob.verbose:
 		consoleHelper.printColored("WARNING! VERBOSE MODE IS ON!", bcolors.YELLOW)
 	server_address = ('127.0.0.1', args.port)
